@@ -37,7 +37,9 @@ DONE - much cleaner and passing all tests. I've seen some edge cases I want to c
 6a. Review Codex implementation
 DONE - flagged with TODO where I think it can be clearer
 
-6b. Try impl using strategy pattern and compare
+6b. Fix TODOs
+
+6c. Try impl using strategy pattern and compare
 
 7. Cross check with text tests
 
@@ -84,3 +86,9 @@ Me: Ok, we have some passing tests now for this - see gilded-rose.spec.ts . Plea
 
 Codex (5.4 Medium thinking)
 - implements the refactoring as described in point 3a, with helper functions for each item type and for quality adjustments.
+
+## Point 6b - review implementation
+Me: I've add some TODO items in gilded-rose.ts, pls fix them.
+
+Codex (5.4 Medium thinking)
+- correctly extracts helpers

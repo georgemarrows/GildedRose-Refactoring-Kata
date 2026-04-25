@@ -14,7 +14,16 @@ const AGED_BRIE = 'Aged Brie';
 const BACKSTAGE_PASSES = 'Backstage passes to a TAFKAL80ETC concert';
 const SULFURAS = 'Sulfuras, Hand of Ragnaros';
 const CONJURED_PREFIX = 'Conjured';
+const MIN_QUALITY = 0;
 const MAX_QUALITY = 50;
+const SULFURAS_QUALITY = 80;
+const NORMAL_QUALITY_CHANGE = 1;
+const EXPIRED_MULTIPLIER = 2;
+const CONJURED_MULTIPLIER = 2;
+const BACKSTAGE_SOON_THRESHOLD = 10;
+const BACKSTAGE_VERY_SOON_THRESHOLD = 5;
+const BACKSTAGE_SOON_QUALITY_CHANGE = 2;
+const BACKSTAGE_VERY_SOON_QUALITY_CHANGE = 3;
 
 export class GildedRose {
   items: Array<Item>;
@@ -38,7 +47,7 @@ function updateItem(item: Item): void {
     // Interpretation: sellIn also never changes for Sulfuras, since it never has to be sold.
     // Just for clarification, an item can never have its `Quality` increase above `50`, however __"Sulfuras"__ is a
     // legendary item and as such its `Quality` is `80` and it never alters.
-    // TODO ensure quality is always 80
+    item.quality = SULFURAS_QUALITY;
     return;
   }
 
@@ -58,14 +67,12 @@ function updateItem(item: Item): void {
 function updateNormalItem(item: Item): void {
   // At the end of each day our system lowers both values for every item
   // Once the sell by date has passed, `Quality` degrades twice as fast
-  // TODO extract constants
-  decreaseQuality(item, hasExpired(item) ? 2 : 1);
+  decreaseQuality(item, qualityChangeForNormalItem(item));
 }
 
 function updateAgedBrie(item: Item): void {
   // __"Aged Brie"__ actually increases in `Quality` the older it gets  
-  // TODO extract constants
-  increaseQuality(item, hasExpired(item) ? 2 : 1);
+  increaseQuality(item, qualityChangeForNormalItem(item));
 }
 
 function updateBackstagePass(item: Item): void {
@@ -78,23 +85,22 @@ function updateBackstagePass(item: Item): void {
     return;
   }
 
-  if (item.sellIn <= 5) {
-    increaseQuality(item, 3);
+  if (item.sellIn <= BACKSTAGE_VERY_SOON_THRESHOLD) {
+    increaseQuality(item, BACKSTAGE_VERY_SOON_QUALITY_CHANGE);
     return;
   }
 
-  if (item.sellIn <= 10) {
-    increaseQuality(item, 2);
+  if (item.sellIn <= BACKSTAGE_SOON_THRESHOLD) {
+    increaseQuality(item, BACKSTAGE_SOON_QUALITY_CHANGE);
     return;
   }
 
-  increaseQuality(item, 1);
+  increaseQuality(item, NORMAL_QUALITY_CHANGE);
 }
 
 function updateConjuredItem(item: Item): void {
   // - __"Conjured"__ items degrade in `Quality` twice as fast as normal items
-  // TODO make the doubling explicit using constants for doubling and for normal item aging
-  decreaseQuality(item, hasExpired(item) ? 4 : 2);
+  decreaseQuality(item, qualityChangeForNormalItem(item) * CONJURED_MULTIPLIER);
 }
 
 function increaseQuality(item: Item, amount: number): void {
@@ -104,8 +110,7 @@ function increaseQuality(item: Item, amount: number): void {
 
 function decreaseQuality(item: Item, amount: number): void {
   // The `Quality` of an item is never negative
-  // TODO extract MIN_QUALITY constant
-  item.quality = Math.max(0, item.quality - amount);
+  item.quality = Math.max(MIN_QUALITY, item.quality - amount);
 }
 
 function decreaseSellIn(item: Item): void {
@@ -115,6 +120,11 @@ function decreaseSellIn(item: Item): void {
 
 function hasExpired(item: Item): boolean {
   return item.sellIn <= 0;
+}
+
+function qualityChangeForNormalItem(item: Item): number {
+  // Once the sell by date has passed, `Quality` degrades twice as fast
+  return hasExpired(item) ? NORMAL_QUALITY_CHANGE * EXPIRED_MULTIPLIER : NORMAL_QUALITY_CHANGE;
 }
 
 function isSulfuras(item: Item): boolean {
