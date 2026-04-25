@@ -27,7 +27,9 @@ export class GildedRose {
 
   updateQuality() {
     for (const item of this.items) {
-      this.strategyFor(item).update(item);
+      const strategy = this.strategyFor(item);
+      strategy.update(item);
+      strategy.decreaseSellIn(item);
     }
 
     return this.items;
@@ -41,6 +43,7 @@ export class GildedRose {
 interface ItemUpdateStrategy {
   canHandle(item: Item): boolean;
   update(item: Item): void;
+  decreaseSellIn(item: Item): void;
 }
 
 abstract class BaseItemStrategy implements ItemUpdateStrategy {
@@ -67,7 +70,7 @@ abstract class BaseItemStrategy implements ItemUpdateStrategy {
     item.quality = Math.max(BaseItemStrategy.MIN_QUALITY, item.quality - amount);
   }
 
-  protected decreaseSellIn(item: Item): void {
+  decreaseSellIn(item: Item): void {
     item.sellIn -= 1;
   }
 
@@ -85,7 +88,6 @@ class AgedBrieStrategy extends BaseItemStrategy {
 
   update(item: Item): void {
     this.increaseQuality(item, this.standardQualityChange(item));
-    this.decreaseSellIn(item);
   }
 }
 
@@ -104,7 +106,6 @@ class BackstagePassStrategy extends BaseItemStrategy {
   update(item: Item): void {
     if (this.hasExpired(item)) {
       item.quality = 0;
-      this.decreaseSellIn(item);
       return;
     }
 
@@ -115,8 +116,6 @@ class BackstagePassStrategy extends BaseItemStrategy {
     } else {
       this.increaseQuality(item, BackstagePassStrategy.DEFAULT_QUALITY_CHANGE);
     }
-
-    this.decreaseSellIn(item);
   }
 }
 
@@ -130,6 +129,10 @@ class SulfurasStrategy implements ItemUpdateStrategy {
 
   update(item: Item): void {
     item.quality = SulfurasStrategy.QUALITY;
+  }
+
+  decreaseSellIn(item: Item): void {
+    // Sulfuras does not decrease sellIn
   }
 }
 
@@ -145,7 +148,6 @@ class ConjuredItemStrategy extends BaseItemStrategy {
     const qualityChange = this.standardQualityChange(item);
 
     this.decreaseQuality(item, qualityChange * ConjuredItemStrategy.CONJURED_MULTIPLIER);
-    this.decreaseSellIn(item);
   }
 }
 
@@ -157,8 +159,5 @@ class NormalItemStrategy extends BaseItemStrategy {
 
   update(item: Item): void {
     this.decreaseQuality(item, this.standardQualityChange(item));
-    this.decreaseSellIn(item);
   }
 }
-
-
