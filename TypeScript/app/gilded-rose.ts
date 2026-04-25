@@ -10,127 +10,163 @@ export class Item {
   }
 }
 
-const AGED_BRIE = 'Aged Brie';
-const BACKSTAGE_PASSES = 'Backstage passes to a TAFKAL80ETC concert';
-const SULFURAS = 'Sulfuras, Hand of Ragnaros';
-const CONJURED_PREFIX = 'Conjured';
-const MIN_QUALITY = 0;
-const MAX_QUALITY = 50;
-const SULFURAS_QUALITY = 80;
-const NORMAL_QUALITY_CHANGE = 1;
-const EXPIRED_MULTIPLIER = 2;
-const CONJURED_MULTIPLIER = 2;
-const BACKSTAGE_SOON_THRESHOLD = 10;
-const BACKSTAGE_VERY_SOON_THRESHOLD = 5;
-const BACKSTAGE_SOON_QUALITY_CHANGE = 2;
-const BACKSTAGE_VERY_SOON_QUALITY_CHANGE = 3;
-
 export class GildedRose {
   items: Array<Item>;
+  private readonly strategies: Array<ItemUpdateStrategy>;
 
   constructor(items = [] as Array<Item>) {
     this.items = items;
+    this.strategies = [
+      new SulfurasStrategy(),
+      new AgedBrieStrategy(),
+      new BackstagePassStrategy(),
+      new ConjuredItemStrategy(),
+      new NormalItemStrategy(),
+    ];
   }
 
   updateQuality() {
     for (const item of this.items) {
-      updateItem(item);
+      this.strategyFor(item).update(item);
     }
 
     return this.items;
   }
+
+  private strategyFor(item: Item): ItemUpdateStrategy {
+    return this.strategies.find((strategy) => strategy.canHandle(item))!;
+  }
 }
 
-function updateItem(item: Item): void {
-  if (isSulfuras(item)) {
-    // __"Sulfuras"__, being a legendary item, never has to be sold or decreases in `Quality`
-    // Interpretation: sellIn also never changes for Sulfuras, since it never has to be sold.
-    // Just for clarification, an item can never have its `Quality` increase above `50`, however __"Sulfuras"__ is a
-    // legendary item and as such its `Quality` is `80` and it never alters.
-    item.quality = SULFURAS_QUALITY;
-    return;
+interface ItemUpdateStrategy {
+  canHandle(item: Item): boolean;
+  update(item: Item): void;
+}
+
+abstract class BaseItemStrategy implements ItemUpdateStrategy {
+  private static readonly MIN_QUALITY = 0;
+  private static readonly MAX_QUALITY = 50;
+
+  abstract canHandle(item: Item): boolean;
+
+  abstract update(item: Item): void;
+
+  protected increaseQuality(item: Item, amount: number): void {
+    item.quality = Math.min(BaseItemStrategy.MAX_QUALITY, item.quality + amount);
   }
 
-  if (item.name === AGED_BRIE) {
-    updateAgedBrie(item);
-  } else if (item.name === BACKSTAGE_PASSES) {
-    updateBackstagePass(item);
-  } else if (isConjured(item)) {
-    updateConjuredItem(item);
-  } else {
-    updateNormalItem(item);
+  protected decreaseQuality(item: Item, amount: number): void {
+    item.quality = Math.max(BaseItemStrategy.MIN_QUALITY, item.quality - amount);
   }
 
-  decreaseSellIn(item);
-}
-
-function updateNormalItem(item: Item): void {
-  // At the end of each day our system lowers both values for every item
-  // Once the sell by date has passed, `Quality` degrades twice as fast
-  decreaseQuality(item, qualityChangeForNormalItem(item));
-}
-
-function updateAgedBrie(item: Item): void {
-  // __"Aged Brie"__ actually increases in `Quality` the older it gets  
-  increaseQuality(item, qualityChangeForNormalItem(item));
-}
-
-function updateBackstagePass(item: Item): void {
-  // - __"Backstage passes"__, like aged brie, increases in `Quality` as its `SellIn` value approaches;
-	// - `Quality` increases by `2` when there are `10` days or less and by `3` when there are `5` days or less but
-	// - `Quality` drops to `0` after the concert
-
-  if (hasExpired(item)) {
-    item.quality = 0;
-    return;
+  protected decreaseSellIn(item: Item): void {
+    item.sellIn -= 1;
   }
 
-  if (item.sellIn <= BACKSTAGE_VERY_SOON_THRESHOLD) {
-    increaseQuality(item, BACKSTAGE_VERY_SOON_QUALITY_CHANGE);
-    return;
+  protected hasExpired(item: Item): boolean {
+    return item.sellIn <= 0;
+  }
+}
+
+class AgedBrieStrategy extends BaseItemStrategy {
+  private static readonly NAME = 'Aged Brie';
+  private static readonly QUALITY_CHANGE = 1;
+  private static readonly EXPIRED_MULTIPLIER = 2;
+
+  canHandle(item: Item): boolean {
+    return item.name === AgedBrieStrategy.NAME;
   }
 
-  if (item.sellIn <= BACKSTAGE_SOON_THRESHOLD) {
-    increaseQuality(item, BACKSTAGE_SOON_QUALITY_CHANGE);
-    return;
+  update(item: Item): void {
+    const qualityChange = this.hasExpired(item)
+      ? AgedBrieStrategy.QUALITY_CHANGE * AgedBrieStrategy.EXPIRED_MULTIPLIER
+      : AgedBrieStrategy.QUALITY_CHANGE;
+
+    this.increaseQuality(item, qualityChange);
+    this.decreaseSellIn(item);
+  }
+}
+
+class BackstagePassStrategy extends BaseItemStrategy {
+  private static readonly NAME = 'Backstage passes to a TAFKAL80ETC concert';
+  private static readonly SOON_THRESHOLD = 10;
+  private static readonly VERY_SOON_THRESHOLD = 5;
+  private static readonly DEFAULT_QUALITY_CHANGE = 1;
+  private static readonly SOON_QUALITY_CHANGE = 2;
+  private static readonly VERY_SOON_QUALITY_CHANGE = 3;
+
+  canHandle(item: Item): boolean {
+    return item.name === BackstagePassStrategy.NAME;
   }
 
-  increaseQuality(item, NORMAL_QUALITY_CHANGE);
+  update(item: Item): void {
+    if (this.hasExpired(item)) {
+      item.quality = 0;
+      this.decreaseSellIn(item);
+      return;
+    }
+
+    if (item.sellIn <= BackstagePassStrategy.VERY_SOON_THRESHOLD) {
+      this.increaseQuality(item, BackstagePassStrategy.VERY_SOON_QUALITY_CHANGE);
+    } else if (item.sellIn <= BackstagePassStrategy.SOON_THRESHOLD) {
+      this.increaseQuality(item, BackstagePassStrategy.SOON_QUALITY_CHANGE);
+    } else {
+      this.increaseQuality(item, BackstagePassStrategy.DEFAULT_QUALITY_CHANGE);
+    }
+
+    this.decreaseSellIn(item);
+  }
 }
 
-function updateConjuredItem(item: Item): void {
-  // - __"Conjured"__ items degrade in `Quality` twice as fast as normal items
-  decreaseQuality(item, qualityChangeForNormalItem(item) * CONJURED_MULTIPLIER);
+class SulfurasStrategy implements ItemUpdateStrategy {
+  private static readonly NAME = 'Sulfuras, Hand of Ragnaros';
+  private static readonly QUALITY = 80;
+
+  canHandle(item: Item): boolean {
+    return item.name === SulfurasStrategy.NAME;
+  }
+
+  update(item: Item): void {
+    item.quality = SulfurasStrategy.QUALITY;
+  }
 }
 
-function increaseQuality(item: Item, amount: number): void {
-  // The `Quality` of an item is never more than `50`
-  item.quality = Math.min(MAX_QUALITY, item.quality + amount);
+class ConjuredItemStrategy extends BaseItemStrategy {
+  private static readonly PREFIX = 'Conjured';
+  private static readonly QUALITY_CHANGE = 1;
+  private static readonly EXPIRED_MULTIPLIER = 2;
+  private static readonly CONJURED_MULTIPLIER = 2;
+
+  canHandle(item: Item): boolean {
+    return item.name.startsWith(ConjuredItemStrategy.PREFIX);
+  }
+
+  update(item: Item): void {
+    const qualityChange = this.hasExpired(item)
+      ? ConjuredItemStrategy.QUALITY_CHANGE * ConjuredItemStrategy.EXPIRED_MULTIPLIER
+      : ConjuredItemStrategy.QUALITY_CHANGE;
+
+    this.decreaseQuality(item, qualityChange * ConjuredItemStrategy.CONJURED_MULTIPLIER);
+    this.decreaseSellIn(item);
+  }
 }
 
-function decreaseQuality(item: Item, amount: number): void {
-  // The `Quality` of an item is never negative
-  item.quality = Math.max(MIN_QUALITY, item.quality - amount);
+class NormalItemStrategy extends BaseItemStrategy {
+  private static readonly QUALITY_CHANGE = 1;
+  private static readonly EXPIRED_MULTIPLIER = 2;
+
+  canHandle(_item: Item): boolean {
+    return true;
+  }
+
+  update(item: Item): void {
+    const qualityChange = this.hasExpired(item)
+      ? NormalItemStrategy.QUALITY_CHANGE * NormalItemStrategy.EXPIRED_MULTIPLIER
+      : NormalItemStrategy.QUALITY_CHANGE;
+
+    this.decreaseQuality(item, qualityChange);
+    this.decreaseSellIn(item);
+  }
 }
 
-function decreaseSellIn(item: Item): void {
-  //  At the end of each day our system lowers both values for every item
-  item.sellIn -= 1;
-}
 
-function hasExpired(item: Item): boolean {
-  return item.sellIn <= 0;
-}
-
-function qualityChangeForNormalItem(item: Item): number {
-  // Once the sell by date has passed, `Quality` degrades twice as fast
-  return hasExpired(item) ? NORMAL_QUALITY_CHANGE * EXPIRED_MULTIPLIER : NORMAL_QUALITY_CHANGE;
-}
-
-function isSulfuras(item: Item): boolean {
-  return item.name === SULFURAS;
-}
-
-function isConjured(item: Item): boolean {
-  return item.name.startsWith(CONJURED_PREFIX);
-}

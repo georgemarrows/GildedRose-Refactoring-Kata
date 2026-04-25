@@ -38,8 +38,13 @@ DONE - much cleaner and passing all tests. I've seen some edge cases I want to c
 DONE - flagged with TODO where I think it can be clearer
 
 6b. Fix TODOs
+DONE - helps a bit but the constants are heavy
 
 6c. Try impl using strategy pattern and compare
+DONE - the current implementation is quite heavy, but readable from the main flow. Some constants can move around for better readability
+
+6d. Manual clean-up of strategy pattern
+
 
 7. Cross check with text tests
 
@@ -92,3 +97,6 @@ Me: I've add some TODO items in gilded-rose.ts, pls fix them.
 
 Codex (5.4 Medium thinking)
 - correctly extracts helpers
+
+## Point 6c - strategy pattern
+Me: Take a look at [gilded-rose.ts](app/gilded-rose.ts) . I feel like this is getting complicated enough that moving to a strategy pattern could be helpful. Do that. Make the strategy classes top-level in the file, not nested. Don't overcomplicate the interplay between superclass and subclass methods; lot of dancing back and forth there can be confusing to follow. Move constants into the relevant strategy classes. Tests are in [gilded-rose.spec.ts](test/jest/gilded-rose.spec.ts) , don't change them.
