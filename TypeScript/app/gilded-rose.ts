@@ -92,7 +92,7 @@ class AgedBrieStrategy extends BaseItemStrategy {
 }
 
 class BackstagePassStrategy extends BaseItemStrategy {
-  private static readonly NAME = 'Backstage passes to a TAFKAL80ETC concert';
+  private static readonly PREFIX = 'Backstage passes';
   private static readonly SOON_THRESHOLD = 10;
   private static readonly VERY_SOON_THRESHOLD = 5;
   private static readonly DEFAULT_QUALITY_CHANGE = 1;
@@ -100,7 +100,7 @@ class BackstagePassStrategy extends BaseItemStrategy {
   private static readonly VERY_SOON_QUALITY_CHANGE = 3;
 
   canHandle(item: Item): boolean {
-    return item.name === BackstagePassStrategy.NAME;
+    return item.name.startsWith(BackstagePassStrategy.PREFIX);
   }
 
   update(item: Item): void {
@@ -115,7 +115,7 @@ class BackstagePassStrategy extends BaseItemStrategy {
     } else if (item.sellIn <= BackstagePassStrategy.SOON_THRESHOLD) {
       qualityChange = BackstagePassStrategy.SOON_QUALITY_CHANGE;
     }
-    
+
     this.increaseQuality(item, qualityChange);
   }
 }

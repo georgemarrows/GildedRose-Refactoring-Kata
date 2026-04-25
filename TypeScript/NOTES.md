@@ -47,6 +47,8 @@ DONE - the current implementation is quite heavy, but readable from the main flo
 DONE - cleaned up some repetition. The kata is finely balanced - just simple enough that probably the strategy pattern is overkill. 
 
 7. Cross check with text tests
+DONE - matches except for Conjure items, which don't seem to be reducing quality fast enough in stdout.gr
+Options: leave it open (what I've done) or change the text test.
 
 8. When done the above, ask Codex to single shot the entire kata. I'm pretty certain that will work.
 
