@@ -35,6 +35,7 @@ DONE - I've reviewed, and I think it's catching all cases. There could be some o
 DONE - much cleaner and passing all tests. I've seen some edge cases I want to check against the requirements though.
 
 6a. Review Codex implementation
+DONE - flagged with TODO where I think it can be clearer
 
 6b. Try impl using strategy pattern and compare
 
@@ -77,3 +78,9 @@ Codex (5.4 High thinking)
 - writes tests
 - implements the Conjured item rules
 - ensures tests pass
+
+## Point 6 - implementation
+Me: Ok, we have some passing tests now for this - see gilded-rose.spec.ts . Please go ahead and implement your idea for the refactoring - simple helper functions. Don't touch NOTES.md. If tests fail but you think the implementation is correct, list out all such cases and give me the arguments for and against.
+
+Codex (5.4 Medium thinking)
+- implements the refactoring as described in point 3a, with helper functions for each item type and for quality adjustments.
