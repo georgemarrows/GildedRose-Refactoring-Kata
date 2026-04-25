@@ -109,13 +109,14 @@ class BackstagePassStrategy extends BaseItemStrategy {
       return;
     }
 
+    var qualityChange = BackstagePassStrategy.DEFAULT_QUALITY_CHANGE;
     if (item.sellIn <= BackstagePassStrategy.VERY_SOON_THRESHOLD) {
-      this.increaseQuality(item, BackstagePassStrategy.VERY_SOON_QUALITY_CHANGE);
+      qualityChange = BackstagePassStrategy.VERY_SOON_QUALITY_CHANGE;
     } else if (item.sellIn <= BackstagePassStrategy.SOON_THRESHOLD) {
-      this.increaseQuality(item, BackstagePassStrategy.SOON_QUALITY_CHANGE);
-    } else {
-      this.increaseQuality(item, BackstagePassStrategy.DEFAULT_QUALITY_CHANGE);
+      qualityChange = BackstagePassStrategy.SOON_QUALITY_CHANGE;
     }
+    
+    this.increaseQuality(item, qualityChange);
   }
 }
 

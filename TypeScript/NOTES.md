@@ -44,7 +44,7 @@ DONE - helps a bit but the constants are heavy
 DONE - the current implementation is quite heavy, but readable from the main flow. Some constants can move around for better readability
 
 6d. Manual clean-up of strategy pattern
-
+DONE - cleaned up some repetition. The kata is finely balanced - just simple enough that probably the strategy pattern is overkill. 
 
 7. Cross check with text tests
 
