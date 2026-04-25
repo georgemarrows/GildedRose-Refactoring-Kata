@@ -32,6 +32,11 @@ DONE - it also added Conjured items and made them pass.
 DONE - I've reviewed, and I think it's catching all cases. There could be some off by one errors on exactly when sellIn hits 0 - to be checked against text tests later.
 
 6. Implement using Codex
+DONE - much cleaner and passing all tests. I've seen some edge cases I want to check against the requirements though.
+
+6a. Review Codex implementation
+
+6b. Try impl using strategy pattern and compare
 
 7. Cross check with text tests
 
