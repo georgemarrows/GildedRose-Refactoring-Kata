@@ -21,7 +21,7 @@ export class GildedRose {
       new AgedBrieStrategy(),
       new BackstagePassStrategy(),
       new ConjuredItemStrategy(),
-      new NormalItemStrategy(),
+      new NormalItemStrategy(), // must be last as it matches all items
     ];
   }
 
@@ -47,9 +47,17 @@ abstract class BaseItemStrategy implements ItemUpdateStrategy {
   private static readonly MIN_QUALITY = 0;
   private static readonly MAX_QUALITY = 50;
 
+  private static readonly STANDARD_QUALITY_CHANGE = 1;
+  private static readonly STANDARD_EXPIRED_MULTIPLIER = 2;
+
   abstract canHandle(item: Item): boolean;
 
   abstract update(item: Item): void;
+
+  protected standardQualityChange(item: Item): number {
+    const qualityChange = BaseItemStrategy.STANDARD_QUALITY_CHANGE;
+    return this.hasExpired(item) ? qualityChange * BaseItemStrategy.STANDARD_EXPIRED_MULTIPLIER : qualityChange;
+  }
 
   protected increaseQuality(item: Item, amount: number): void {
     item.quality = Math.min(BaseItemStrategy.MAX_QUALITY, item.quality + amount);
@@ -70,19 +78,13 @@ abstract class BaseItemStrategy implements ItemUpdateStrategy {
 
 class AgedBrieStrategy extends BaseItemStrategy {
   private static readonly NAME = 'Aged Brie';
-  private static readonly QUALITY_CHANGE = 1;
-  private static readonly EXPIRED_MULTIPLIER = 2;
 
   canHandle(item: Item): boolean {
     return item.name === AgedBrieStrategy.NAME;
   }
 
   update(item: Item): void {
-    const qualityChange = this.hasExpired(item)
-      ? AgedBrieStrategy.QUALITY_CHANGE * AgedBrieStrategy.EXPIRED_MULTIPLIER
-      : AgedBrieStrategy.QUALITY_CHANGE;
-
-    this.increaseQuality(item, qualityChange);
+    this.increaseQuality(item, this.standardQualityChange(item));
     this.decreaseSellIn(item);
   }
 }
@@ -133,8 +135,6 @@ class SulfurasStrategy implements ItemUpdateStrategy {
 
 class ConjuredItemStrategy extends BaseItemStrategy {
   private static readonly PREFIX = 'Conjured';
-  private static readonly QUALITY_CHANGE = 1;
-  private static readonly EXPIRED_MULTIPLIER = 2;
   private static readonly CONJURED_MULTIPLIER = 2;
 
   canHandle(item: Item): boolean {
@@ -142,9 +142,7 @@ class ConjuredItemStrategy extends BaseItemStrategy {
   }
 
   update(item: Item): void {
-    const qualityChange = this.hasExpired(item)
-      ? ConjuredItemStrategy.QUALITY_CHANGE * ConjuredItemStrategy.EXPIRED_MULTIPLIER
-      : ConjuredItemStrategy.QUALITY_CHANGE;
+    const qualityChange = this.standardQualityChange(item);
 
     this.decreaseQuality(item, qualityChange * ConjuredItemStrategy.CONJURED_MULTIPLIER);
     this.decreaseSellIn(item);
@@ -152,19 +150,13 @@ class ConjuredItemStrategy extends BaseItemStrategy {
 }
 
 class NormalItemStrategy extends BaseItemStrategy {
-  private static readonly QUALITY_CHANGE = 1;
-  private static readonly EXPIRED_MULTIPLIER = 2;
 
   canHandle(_item: Item): boolean {
     return true;
   }
 
   update(item: Item): void {
-    const qualityChange = this.hasExpired(item)
-      ? NormalItemStrategy.QUALITY_CHANGE * NormalItemStrategy.EXPIRED_MULTIPLIER
-      : NormalItemStrategy.QUALITY_CHANGE;
-
-    this.decreaseQuality(item, qualityChange);
+    this.decreaseQuality(item, this.standardQualityChange(item));
     this.decreaseSellIn(item);
   }
 }
