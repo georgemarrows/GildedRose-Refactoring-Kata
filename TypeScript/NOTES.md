@@ -23,17 +23,19 @@ META NOTE: GHCP tab completion seems to know about this kata, so is suggesting i
 3a. Ask Codex for alternatives and pros/cons of each.
 See below for Codex response. It doesn't like strategy pattern for this. We have 4 special cases, so perhaps that's valid.
 
-Conclusion: let's go with the simpler approach and see what it looks like.
+DONE Conclusion: let's go with the simpler approach and see what it looks like.
 
 4. Ask Codex to expand out tests based only on README.md
+DONE - it also added Conjured items and made them pass.
 
 5. Review tests
+DONE - I've reviewed, and I think it's catching all cases. There could be some off by one errors on exactly when sellIn hits 0 - to be checked against text tests later.
 
 6. Implement using Codex
 
 7. Cross check with text tests
 
-
+8. When done the above, ask Codex to single shot the entire kata. I'm pretty certain that will work.
 
 # Conversations with Codex
 
@@ -62,3 +64,11 @@ Don’t model quality rules as a base class override hierarchy unless you have a
 Separate “quality transition” from “sellIn decrement” so the order is explicit and easy to test.
 Put the 0..50 clamping rule behind helpers, with Sulfuras bypassing that logic.
 If you want, I can rewrite point 3 in NOTES.md into a tighter implementation plan.
+
+## Point 4 - test cases
+Me: Look at GildedRoseRequirements.md. Extend gilded-rose.spec.ts to cover all the various edge cases described in the requirements. If it helps, you can extract an updateQualityForOneItem method from updateQuality in gilded-rose.ts but no more refactoring than that at the moment - keep the nested ifs
+
+Codex (5.4 High thinking)
+- writes tests
+- implements the Conjured item rules
+- ensures tests pass
