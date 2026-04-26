@@ -12,58 +12,153 @@ export class Item {
 
 export class GildedRose {
   items: Array<Item>;
+  private readonly strategies: Array<ItemUpdateStrategy>;
 
   constructor(items = [] as Array<Item>) {
     this.items = items;
+    this.strategies = [
+      new SulfurasStrategy(),
+      new AgedBrieStrategy(),
+      new BackstagePassStrategy(),
+      new ConjuredItemStrategy(),
+      new NormalItemStrategy(), // must be last as it matches all items
+    ];
   }
 
   updateQuality() {
-    for (let i = 0; i < this.items.length; i++) {
-      if (this.items[i].name != 'Aged Brie' && this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-        if (this.items[i].quality > 0) {
-          if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-            this.items[i].quality = this.items[i].quality - 1
-          }
-        }
-      } else {
-        if (this.items[i].quality < 50) {
-          this.items[i].quality = this.items[i].quality + 1
-          if (this.items[i].name == 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].sellIn < 11) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-            if (this.items[i].sellIn < 6) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-          }
-        }
-      }
-      if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-        this.items[i].sellIn = this.items[i].sellIn - 1;
-      }
-      if (this.items[i].sellIn < 0) {
-        if (this.items[i].name != 'Aged Brie') {
-          if (this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].quality > 0) {
-              if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-                this.items[i].quality = this.items[i].quality - 1
-              }
-            }
-          } else {
-            this.items[i].quality = this.items[i].quality - this.items[i].quality
-          }
-        } else {
-          if (this.items[i].quality < 50) {
-            this.items[i].quality = this.items[i].quality + 1
-          }
-        }
-      }
+    for (const item of this.items) {
+      const strategy = this.strategyFor(item);
+      strategy.update(item);
+      strategy.decreaseSellIn(item);
     }
 
     return this.items;
+  }
+
+  private strategyFor(item: Item): ItemUpdateStrategy {
+    return this.strategies.find((strategy) => strategy.canHandle(item))!;
+  }
+}
+
+interface ItemUpdateStrategy {
+  canHandle(item: Item): boolean;
+  update(item: Item): void;
+  decreaseSellIn(item: Item): void;
+}
+
+abstract class BaseItemStrategy implements ItemUpdateStrategy {
+  private static readonly MIN_QUALITY = 0;
+  private static readonly MAX_QUALITY = 50;
+
+  private static readonly STANDARD_QUALITY_CHANGE = 1;
+  private static readonly STANDARD_EXPIRED_MULTIPLIER = 2;
+
+  abstract canHandle(item: Item): boolean;
+
+  abstract update(item: Item): void;
+
+  protected standardQualityChange(item: Item): number {
+    const qualityChange = BaseItemStrategy.STANDARD_QUALITY_CHANGE;
+    return this.hasExpired(item) ? qualityChange * BaseItemStrategy.STANDARD_EXPIRED_MULTIPLIER : qualityChange;
+  }
+
+  protected increaseQuality(item: Item, amount: number): void {
+    item.quality = Math.min(BaseItemStrategy.MAX_QUALITY, item.quality + amount);
+  }
+
+  protected decreaseQuality(item: Item, amount: number): void {
+    item.quality = Math.max(BaseItemStrategy.MIN_QUALITY, item.quality - amount);
+  }
+
+  decreaseSellIn(item: Item): void {
+    item.sellIn -= 1;
+  }
+
+  protected hasExpired(item: Item): boolean {
+    return item.sellIn <= 0;
+  }
+}
+
+class AgedBrieStrategy extends BaseItemStrategy {
+  private static readonly NAME = 'Aged Brie';
+
+  canHandle(item: Item): boolean {
+    return item.name === AgedBrieStrategy.NAME;
+  }
+
+  update(item: Item): void {
+    this.increaseQuality(item, this.standardQualityChange(item));
+  }
+}
+
+class BackstagePassStrategy extends BaseItemStrategy {
+  private static readonly PREFIX = 'Backstage passes';
+  private static readonly SOON_THRESHOLD = 10;
+  private static readonly VERY_SOON_THRESHOLD = 5;
+  private static readonly DEFAULT_QUALITY_CHANGE = 1;
+  private static readonly SOON_QUALITY_CHANGE = 2;
+  private static readonly VERY_SOON_QUALITY_CHANGE = 3;
+
+  canHandle(item: Item): boolean {
+    return item.name.startsWith(BackstagePassStrategy.PREFIX);
+  }
+
+  update(item: Item): void {
+    if (this.hasExpired(item)) {
+      item.quality = 0;
+      return;
+    }
+
+    var qualityChange = BackstagePassStrategy.DEFAULT_QUALITY_CHANGE;
+    if (item.sellIn <= BackstagePassStrategy.VERY_SOON_THRESHOLD) {
+      qualityChange = BackstagePassStrategy.VERY_SOON_QUALITY_CHANGE;
+    } else if (item.sellIn <= BackstagePassStrategy.SOON_THRESHOLD) {
+      qualityChange = BackstagePassStrategy.SOON_QUALITY_CHANGE;
+    }
+
+    this.increaseQuality(item, qualityChange);
+  }
+}
+
+class SulfurasStrategy implements ItemUpdateStrategy {
+  private static readonly NAME = 'Sulfuras, Hand of Ragnaros';
+  private static readonly QUALITY = 80;
+
+  canHandle(item: Item): boolean {
+    return item.name === SulfurasStrategy.NAME;
+  }
+
+  update(item: Item): void {
+    item.quality = SulfurasStrategy.QUALITY;
+  }
+
+  decreaseSellIn(item: Item): void {
+    // Sulfuras does not decrease sellIn
+  }
+}
+
+class ConjuredItemStrategy extends BaseItemStrategy {
+  private static readonly PREFIX = 'Conjured';
+  private static readonly CONJURED_MULTIPLIER = 2;
+
+  canHandle(item: Item): boolean {
+    return item.name.startsWith(ConjuredItemStrategy.PREFIX);
+  }
+
+  update(item: Item): void {
+    const qualityChange = this.standardQualityChange(item);
+
+    this.decreaseQuality(item, qualityChange * ConjuredItemStrategy.CONJURED_MULTIPLIER);
+  }
+}
+
+class NormalItemStrategy extends BaseItemStrategy {
+
+  canHandle(_item: Item): boolean {
+    return true;
+  }
+
+  update(item: Item): void {
+    this.decreaseQuality(item, this.standardQualityChange(item));
   }
 }
