@@ -1,17 +1,17 @@
 How I will approach this.
 
 1. Check I can build and run tests
-Unit tests DONE - one fails with expected
-Texttest - found some diffs in output, but not very clear. Will try later, maybe just diffing against master output file. 
+- Unit tests DONE - one fails with expected error.
+- Texttest - found some diffs in output, but not very clear. Will try later, maybe just diffing against master output file. 
 
-2. Do types check?
-Run `npm run compile` - 21 problems in files node_modules, so not really.
-But if I make an error in gilded-rose.ts, it does show up as compile error. So the main code is typechecking ok.
-Will ignore the problems in node_module. 
+3. Do types check?
+- Run `npm run compile` - 21 problems in files node_modules, so not really.
+- But if I make an error in gilded-rose.ts, it does show up as compile error. So the main code is typechecking ok.
+- Will ignore the problems in node_modules. 
 
-3. Write up approach for implementing
-Initial thought - feels like strategy pattern could be useful.
-Two things changing each time - sellIn and quality.
+4. Write up approach for implementing
+- Initial thought - feels like strategy pattern could be useful.
+- Two things changing each time - sellIn and quality.
 - It's unpleasant that sellIn changes each time - a fixed sellByDate would be cleaner, but instructions say can't change Item class.
 - Main focus then is the horrible ifs for quality. Strategy object for each type of item could be clean.
 - Need constants for item names
@@ -21,29 +21,27 @@ Two things changing each time - sellIn and quality.
 META NOTE: GHCP tab completion seems to know about this kata, so is suggesting ideas as I write the above. I've tried to ignore then.
 
 3a. Ask Codex for alternatives and pros/cons of each.
-See below for Codex response. It doesn't like strategy pattern for this. We have 4 special cases, so perhaps that's valid.
-
-DONE Conclusion: let's go with the simpler approach and see what it looks like.
+* See below for Codex response. It doesn't like strategy pattern for this. We have 4 special cases, so perhaps that's valid.
+* DONE Conclusion: let's go with the simpler approach and see what it looks like.
 
 4. Ask Codex to expand out tests based only on README.md
-DONE - it also added Conjured items and made them pass.
+* DONE - it also added Conjured items and made them pass.
 
 5. Review tests
-DONE - I've reviewed, and I think it's catching all cases. There could be some off by one errors on exactly when sellIn hits 0 - to be checked against text tests later.
+* DONE - I've reviewed, and I think it's catching all cases. There could be some off by one errors on exactly when sellIn hits 0 - to be checked against text tests later.
 
 6. Implement using Codex
-DONE - much cleaner and passing all tests. I've seen some edge cases I want to check against the requirements though.
+* DONE - much cleaner and passing all tests. I've seen some edge cases I want to check against the requirements though.
 
 6a. Review Codex implementation
-DONE - flagged with TODO where I think it can be clearer
+* DONE - flagged with TODO where I think it can be clearer
 
 6b. Fix TODOs
+* DONE
 
 6c. Try impl using strategy pattern and compare
 
 7. Cross check with text tests
-
-8. When done the above, ask Codex to single shot the entire kata. I'm pretty certain that will work.
 
 # Conversations with Codex
 
